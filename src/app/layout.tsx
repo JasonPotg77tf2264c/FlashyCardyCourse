@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-import { ClerkProvider, SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
-import { Button } from "@/components/ui/button";
+import { HeaderUserSection } from "@/components/header-user-section";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -33,21 +33,7 @@ export default function RootLayout({
               FlashyCardy
             </span>
             <div className="flex items-center gap-2">
-              <Show when="signed-out">
-                <SignInButton mode="modal">
-                  <Button variant="outline" size="sm">
-                    Sign In
-                  </Button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <Button size="sm">
-                    Sign Up
-                  </Button>
-                </SignUpButton>
-              </Show>
-              <Show when="signed-in">
-                <UserButton />
-              </Show>
+              <HeaderUserSection />
             </div>
           </header>
           {children}

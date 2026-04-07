@@ -31,14 +31,16 @@ export function DeleteCardDialog({ cardId, deckId }: DeleteCardDialogProps) {
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-destructive hover:text-destructive"
-        >
-          Delete
-        </Button>
+      <AlertDialogTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+          />
+        }
+      >
+        Delete
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

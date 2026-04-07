@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -19,9 +20,10 @@ import { createDeckAction } from "@/actions/decks";
 
 interface AddDeckDialogProps {
   triggerLabel?: string;
+  isAtLimit?: boolean;
 }
 
-export function AddDeckDialog({ triggerLabel = "+ New Deck" }: AddDeckDialogProps) {
+export function AddDeckDialog({ triggerLabel = "+ New Deck", isAtLimit = false }: AddDeckDialogProps) {
   const [open, setOpen] = React.useState(false);
   const [isPending, setIsPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -58,6 +60,14 @@ export function AddDeckDialog({ triggerLabel = "+ New Deck" }: AddDeckDialogProp
       setOpen(nextOpen);
       if (!nextOpen) setError(null);
     }
+  }
+
+  if (isAtLimit) {
+    return (
+      <Link href="/pricing" className={buttonVariants({ variant: "outline" })}>
+        Upgrade to Pro for more decks
+      </Link>
+    );
   }
 
   return (

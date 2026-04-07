@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,15 +18,24 @@ import { createCardAction } from "@/actions/cards";
 
 interface AddCardDialogProps {
   deckId: number;
-  trigger?: React.ReactNode;
+  trigger?: React.ReactElement;
+  isAtLimit?: boolean;
 }
 
-export function AddCardDialog({ deckId, trigger }: AddCardDialogProps) {
+export function AddCardDialog({ deckId, trigger, isAtLimit = false }: AddCardDialogProps) {
   const [open, setOpen] = useState(false);
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  if (isAtLimit) {
+    return (
+      <Link href="/pricing" className={buttonVariants({ variant: "outline", size: "sm" })}>
+        Upgrade for more cards
+      </Link>
+    );
+  }
 
   function handleOpenChange(next: boolean) {
     if (!next) {
@@ -52,9 +62,13 @@ export function AddCardDialog({ deckId, trigger }: AddCardDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger ?? <Button variant="outline">+ Add Card</Button>}
-      </DialogTrigger>
+      {trigger !== undefined ? (
+        <DialogTrigger render={trigger} />
+      ) : (
+        <DialogTrigger render={<Button variant="outline" />}>
+          + Add Card
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add a new card</DialogTitle>

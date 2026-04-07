@@ -50,10 +50,8 @@ export function EditCardDialog({ card, deckId }: EditCardDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          Edit
-        </Button>
+      <DialogTrigger render={<Button variant="ghost" size="sm" />}>
+        Edit
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

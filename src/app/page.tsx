@@ -1,7 +1,7 @@
-import { SignInButton, SignUpButton, Show } from "@clerk/nextjs";
+import { Show } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { SignInBtn, SignUpBtn } from "@/components/auth-buttons";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -15,12 +15,8 @@ export default async function Home() {
         </p>
         <Show when="signed-out">
           <div className="flex gap-3 mt-4">
-            <SignInButton mode="modal">
-              <Button variant="outline">Sign In</Button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <Button>Sign Up</Button>
-            </SignUpButton>
+            <SignInBtn />
+            <SignUpBtn />
           </div>
         </Show>
       </div>

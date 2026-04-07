@@ -54,10 +54,8 @@ export function EditDeckDialog({ deck }: EditDeckDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Edit Deck
-        </Button>
+      <DialogTrigger render={<Button variant="outline" size="sm" />}>
+        Edit Deck
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

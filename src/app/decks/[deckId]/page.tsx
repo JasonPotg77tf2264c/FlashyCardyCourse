@@ -21,8 +21,10 @@ interface DeckPageProps {
   params: Promise<{ deckId: string }>;
 }
 
+const CARDS_PER_DECK_LIMIT = 15;
+
 export default async function DeckPage({ params }: DeckPageProps) {
-  const { userId } = await auth();
+  const { userId, has } = await auth();
   if (!userId) redirect("/");
 
   const { deckId } = await params;
@@ -35,6 +37,9 @@ export default async function DeckPage({ params }: DeckPageProps) {
   ]);
 
   if (!deck) notFound();
+
+  const isFreePlan = !has({ feature: "unlimited_decks" });
+  const isAtCardLimit = isFreePlan && cards.length >= CARDS_PER_DECK_LIMIT;
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-8">
@@ -66,6 +71,14 @@ export default async function DeckPage({ params }: DeckPageProps) {
           <Badge variant="secondary">
             {cards.length} card{cards.length !== 1 ? "s" : ""}
           </Badge>
+          {isFreePlan && (
+            <Badge
+              variant={isAtCardLimit ? "destructive" : "outline"}
+              className="text-xs"
+            >
+              {cards.length} / {CARDS_PER_DECK_LIMIT} cards (Free plan)
+            </Badge>
+          )}
           <span className="text-muted-foreground text-xs">
             Last updated{" "}
             {deck.updatedAt.toLocaleDateString("en-US", {
@@ -75,13 +88,22 @@ export default async function DeckPage({ params }: DeckPageProps) {
             })}
           </span>
         </div>
+        {isAtCardLimit && (
+          <p className="text-xs text-destructive">
+            Card limit reached for this deck.{" "}
+            <Link href="/pricing" className="underline underline-offset-3">
+              Upgrade to Pro
+            </Link>{" "}
+            for unlimited cards.
+          </p>
+        )}
       </div>
 
       {/* Cards section */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Cards</h2>
-          <AddCardDialog deckId={id} />
+          <AddCardDialog deckId={id} isAtLimit={isAtCardLimit} />
         </div>
 
         {cards.length === 0 ? (

@@ -4,7 +4,9 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getDeckById } from "@/db/queries/decks";
-import { createCard, updateCard, deleteCard } from "@/db/queries/cards";
+import { createCard, updateCard, deleteCard, getCardsByDeck } from "@/db/queries/cards";
+
+const CARDS_PER_DECK_LIMIT = 15;
 
 const createCardSchema = z.object({
   deckId: z.number().int().positive(),
@@ -29,7 +31,7 @@ type UpdateCardInput = z.infer<typeof updateCardSchema>;
 type DeleteCardInput = z.infer<typeof deleteCardSchema>;
 
 export async function createCardAction(data: CreateCardInput) {
-  const { userId } = await auth();
+  const { userId, has } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
   const parsed = createCardSchema.safeParse(data);
@@ -39,6 +41,16 @@ export async function createCardAction(data: CreateCardInput) {
 
   const deck = await getDeckById(deckId, userId);
   if (!deck) throw new Error("Deck not found");
+
+  const hasUnlimitedDecks = has({ feature: "unlimited_decks" });
+  if (!hasUnlimitedDecks) {
+    const existingCards = await getCardsByDeck(deckId);
+    if (existingCards.length >= CARDS_PER_DECK_LIMIT) {
+      throw new Error(
+        `Free plan limit: ${CARDS_PER_DECK_LIMIT} cards per deck. Upgrade to Pro for unlimited cards.`,
+      );
+    }
+  }
 
   await createCard(deckId, front, back);
 
