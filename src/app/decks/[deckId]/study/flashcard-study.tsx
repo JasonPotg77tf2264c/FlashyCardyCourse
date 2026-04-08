@@ -286,7 +286,8 @@ export function FlashcardStudy({ cards, deckId, deckName }: FlashcardStudyProps)
           </Button>
           <Button
             size="lg"
-            className="gap-2 bg-rose-600 hover:bg-rose-700 text-white"
+            variant="destructive"
+            className="gap-2"
             onClick={handleIncorrect}
           >
             <XCircle className="h-5 w-5" />

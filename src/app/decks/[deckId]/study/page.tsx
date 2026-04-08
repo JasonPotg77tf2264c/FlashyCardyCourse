@@ -18,12 +18,10 @@ export default async function StudyPage({ params }: StudyPageProps) {
   const id = Number(deckId);
   if (isNaN(id)) notFound();
 
-  const [deck, cards] = await Promise.all([
-    getDeckById(id, userId),
-    getCardsByDeck(id),
-  ]);
-
+  const deck = await getDeckById(id, userId);
   if (!deck) notFound();
+
+  const cards = await getCardsByDeck(id);
   if (cards.length === 0) redirect(`/decks/${id}`);
 
   return (

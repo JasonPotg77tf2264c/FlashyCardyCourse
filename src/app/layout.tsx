@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { HeaderUserSection } from "@/components/header-user-section";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -28,15 +29,17 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ClerkProvider appearance={{ baseTheme: dark }}>
-          <header className="flex items-center justify-between border-b border-border px-6 py-3">
-            <span className="text-lg font-semibold tracking-tight text-foreground">
-              FlashyCardy
-            </span>
-            <div className="flex items-center gap-2">
-              <HeaderUserSection />
-            </div>
-          </header>
-          {children}
+          <TooltipProvider>
+            <header className="flex items-center justify-between border-b border-border px-6 py-3">
+              <span className="text-lg font-semibold tracking-tight text-foreground">
+                FlashyCardy
+              </span>
+              <div className="flex items-center gap-2">
+                <HeaderUserSection />
+              </div>
+            </header>
+            {children}
+          </TooltipProvider>
         </ClerkProvider>
       </body>
     </html>

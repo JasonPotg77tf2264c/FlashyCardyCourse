@@ -16,6 +16,7 @@ import { EditCardDialog } from "./edit-card-dialog";
 import { DeleteCardDialog } from "./delete-card-dialog";
 import { EditDeckDialog } from "./edit-deck-dialog";
 import { StudyLink } from "./study-link";
+import { GenerateCardsButton } from "./generate-cards-button";
 
 interface DeckPageProps {
   params: Promise<{ deckId: string }>;
@@ -31,12 +32,10 @@ export default async function DeckPage({ params }: DeckPageProps) {
   const id = Number(deckId);
   if (isNaN(id)) notFound();
 
-  const [deck, cards] = await Promise.all([
-    getDeckById(id, userId),
-    getCardsByDeck(id),
-  ]);
-
+  const deck = await getDeckById(id, userId);
   if (!deck) notFound();
+
+  const cards = await getCardsByDeck(id);
 
   const isFreePlan = !has({ feature: "unlimited_decks" });
   const isAtCardLimit = isFreePlan && cards.length >= CARDS_PER_DECK_LIMIT;
@@ -59,6 +58,10 @@ export default async function DeckPage({ params }: DeckPageProps) {
             )}
           </div>
           <div className="flex gap-2">
+            <GenerateCardsButton
+              deckId={id}
+              hasDescription={!!deck.description}
+            />
             <EditDeckDialog deck={deck} />
             {cards.length > 0 ? (
               <StudyLink deckId={id} />

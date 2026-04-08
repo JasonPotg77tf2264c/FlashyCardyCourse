@@ -26,3 +26,10 @@ export async function deleteCard(cardId: number, deckId: number) {
     .delete(cards)
     .where(and(eq(cards.id, cardId), eq(cards.deckId, deckId)));
 }
+
+export async function bulkCreateCards(
+  deckId: number,
+  cardList: { front: string; back: string }[],
+) {
+  return db.insert(cards).values(cardList.map((c) => ({ deckId, ...c })));
+}
