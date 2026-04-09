@@ -14,8 +14,10 @@ export const cards = pgTable('cards', {
   deckId: integer()
     .notNull()
     .references(() => decks.id, { onDelete: 'cascade' }),
-  front: text().notNull(),
-  back: text().notNull(),
+  front: text(),
+  frontImageUrl: text(),
+  back: text(),
+  backImageUrl: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow(),
 });

@@ -13,7 +13,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getDecksByUser } from "@/db/queries/decks";
+import { getDecksByUserWithCardCount } from "@/db/queries/decks";
 import { AddDeckDialog } from "@/components/add-deck-dialog";
 import { DeleteDeckButton } from "@/components/delete-deck-button";
 
@@ -24,7 +24,7 @@ export default async function DashboardPage() {
   const { userId, has } = await auth();
   if (!userId) redirect("/");
 
-  const decks = await getDecksByUser(userId);
+  const decks = await getDecksByUserWithCardCount(userId);
 
   const hasUnlimitedDecks = has({ feature: "unlimited_decks" });
   const isPro = has({ plan: "pro" });
@@ -146,17 +146,20 @@ export default async function DashboardPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((deck) => (
-            <div key={deck.id} className="relative">
-              <Link href={`/decks/${deck.id}`} className="block">
-                <Card className="h-full transition-colors hover:bg-muted/50 cursor-pointer">
-                  <CardHeader className="pr-12">
-                    <CardTitle>{deck.name}</CardTitle>
-                    <CardDescription>
+            <div key={deck.id} className="relative h-40">
+              <Link href={`/decks/${deck.id}`} className="block h-full">
+                <Card className="h-full flex flex-col transition-colors hover:bg-muted/50 cursor-pointer">
+                  <CardHeader className="pr-12 flex-none">
+                    <CardTitle className="line-clamp-1">{deck.name}</CardTitle>
+                    <CardDescription className="line-clamp-2">
                       {deck.description ?? "No description provided."}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent />
+                  <div className="flex-1" />
                   <CardFooter className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-xs">
+                      {deck.cardCount} {deck.cardCount === 1 ? "card" : "cards"}
+                    </span>
                     <span className="text-muted-foreground text-xs">
                       Updated{" "}
                       {deck.updatedAt.toLocaleDateString("en-US", {
@@ -165,11 +168,6 @@ export default async function DashboardPage() {
                         day: "numeric",
                       })}
                     </span>
-                    {isFreePlan && (
-                      <span className="text-muted-foreground text-xs">
-                        Up to {CARDS_PER_DECK_LIMIT} cards
-                      </span>
-                    )}
                   </CardFooter>
                 </Card>
               </Link>

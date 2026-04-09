@@ -1,10 +1,12 @@
-import { auth } from "@clerk/nextjs/server";
-import { UserButton } from "@clerk/nextjs";
+"use client";
+
+import { UserButton, useAuth } from "@clerk/nextjs";
 import { Badge } from "@/components/ui/badge";
 import { SignInBtn, SignUpBtn } from "@/components/auth-buttons";
 
-export async function HeaderUserSection() {
-  const { userId, has } = await auth();
+export function HeaderUserSection() {
+  const { userId, has } = useAuth();
+  const isPro = has?.({ plan: "pro" }) ?? false;
 
   if (!userId) {
     return (
@@ -14,8 +16,6 @@ export async function HeaderUserSection() {
       </>
     );
   }
-
-  const isPro = has({ plan: "pro" });
 
   return (
     <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +21,47 @@ import {
 
 type CardData = {
   id: number;
-  front: string;
-  back: string;
+  front: string | null;
+  frontImageUrl?: string | null;
+  back: string | null;
+  backImageUrl?: string | null;
 };
+
+function FormattedCardBack({ text }: { text: string }) {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+
+  if (lines.length <= 1) {
+    return (
+      <p className="text-center text-xl font-semibold leading-relaxed">{text}</p>
+    );
+  }
+
+  return (
+    <div className="w-full space-y-1.5 text-left">
+      {lines.map((line, i) => {
+        if (/^Step\s*\d+:/i.test(line)) {
+          return (
+            <p key={i} className="font-semibold text-sm text-primary pt-2 first:pt-0">
+              {line}
+            </p>
+          );
+        }
+        if (/^(Answer|Result|Solution|∴)[\s:]*/i.test(line)) {
+          return (
+            <p key={i} className="font-bold text-sm text-emerald-400 pt-3 mt-1 border-t border-border">
+              {line}
+            </p>
+          );
+        }
+        return (
+          <p key={i} className="text-xs font-mono text-foreground pl-3 leading-relaxed">
+            {line}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 interface FlashcardStudyProps {
   cards: CardData[];
@@ -234,21 +273,38 @@ export function FlashcardStudy({ cards, deckId, deckName }: FlashcardStudyProps)
             transition: "transform 0.55s cubic-bezier(0.45, 0, 0.55, 1)",
             transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
             position: "relative",
-            height: "320px",
+            height: "420px",
           }}
         >
           {/* Front */}
           <div
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl border bg-card p-10 shadow-md"
+            className="absolute inset-0 flex flex-col rounded-2xl border bg-card shadow-md overflow-hidden"
           >
-            <Badge variant="secondary" className="absolute top-4 left-4 text-xs">
-              Front
-            </Badge>
-            <p className="text-center text-xl font-semibold leading-relaxed">
-              {currentCard.front}
-            </p>
-            <p className="text-muted-foreground text-sm mt-2">Click to reveal answer</p>
+            <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
+              <Badge variant="secondary" className="text-xs">Front</Badge>
+              <span className="text-muted-foreground text-xs">Click to reveal answer</span>
+            </div>
+            {currentCard.frontImageUrl && (
+              <div className="shrink-0 px-6 pb-2">
+                <div className="relative w-full rounded-lg overflow-hidden border border-border max-h-44">
+                  <Image
+                    src={currentCard.frontImageUrl}
+                    alt="Card front image"
+                    width={600}
+                    height={200}
+                    className="w-full object-contain max-h-44"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex-1 min-h-0 overflow-y-auto px-8 py-3 flex flex-col items-center justify-center">
+              {currentCard.front && (
+                <p className="text-center text-xl font-semibold leading-relaxed">
+                  {currentCard.front}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Back */}
@@ -258,17 +314,28 @@ export function FlashcardStudy({ cards, deckId, deckName }: FlashcardStudyProps)
               WebkitBackfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
             }}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl border bg-card p-10 shadow-md"
+            className="absolute inset-0 flex flex-col rounded-2xl border bg-card shadow-md overflow-hidden"
           >
-            <Badge variant="outline" className="absolute top-4 left-4 text-xs">
-              Back
-            </Badge>
-            <p className="text-muted-foreground text-sm absolute top-4 right-4">
-              Click to flip back
-            </p>
-            <p className="text-center text-xl font-semibold leading-relaxed">
-              {currentCard.back}
-            </p>
+            <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
+              <Badge variant="outline" className="text-xs">Back</Badge>
+              <span className="text-muted-foreground text-xs">Click to flip back</span>
+            </div>
+            {currentCard.backImageUrl && (
+              <div className="shrink-0 px-6 pb-2">
+                <div className="relative w-full rounded-lg overflow-hidden border border-border max-h-44">
+                  <Image
+                    src={currentCard.backImageUrl}
+                    alt="Card back image"
+                    width={600}
+                    height={200}
+                    className="w-full object-contain max-h-44"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex-1 min-h-0 overflow-y-auto px-8 py-3 flex flex-col justify-center">
+              {currentCard.back && <FormattedCardBack text={currentCard.back} />}
+            </div>
           </div>
         </div>
       </div>

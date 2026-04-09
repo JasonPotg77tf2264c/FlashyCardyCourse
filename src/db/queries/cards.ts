@@ -10,15 +10,36 @@ export async function getCardsByDeck(deckId: number) {
     .orderBy(desc(cards.updatedAt));
 }
 
-export async function createCard(deckId: number, front: string, back: string) {
-  return db.insert(cards).values({ deckId, front, back });
+export async function createCard(
+  deckId: number,
+  front: string | null,
+  frontImageUrl: string | null,
+  back: string | null,
+  backImageUrl: string | null,
+) {
+  return db.insert(cards).values({ deckId, front, frontImageUrl, back, backImageUrl });
 }
 
-export async function updateCard(cardId: number, deckId: number, front: string, back: string) {
+export async function updateCard(
+  cardId: number,
+  deckId: number,
+  front: string | null,
+  frontImageUrl: string | null,
+  back: string | null,
+  backImageUrl: string | null,
+) {
   return db
     .update(cards)
-    .set({ front, back, updatedAt: new Date() })
+    .set({ front, frontImageUrl, back, backImageUrl, updatedAt: new Date() })
     .where(and(eq(cards.id, cardId), eq(cards.deckId, deckId)));
+}
+
+export async function getCardById(cardId: number, deckId: number) {
+  const result = await db
+    .select()
+    .from(cards)
+    .where(and(eq(cards.id, cardId), eq(cards.deckId, deckId)));
+  return result[0] ?? null;
 }
 
 export async function deleteCard(cardId: number, deckId: number) {
@@ -31,5 +52,11 @@ export async function bulkCreateCards(
   deckId: number,
   cardList: { front: string; back: string }[],
 ) {
-  return db.insert(cards).values(cardList.map((c) => ({ deckId, ...c })));
+  return db.insert(cards).values(
+    cardList.map((c) => ({ deckId, front: c.front, frontImageUrl: null, back: c.back, backImageUrl: null })),
+  );
+}
+
+export async function deleteAllCards(deckId: number) {
+  return db.delete(cards).where(eq(cards.deckId, deckId));
 }

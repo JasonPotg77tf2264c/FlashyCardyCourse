@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,6 +16,7 @@ import { AddCardDialog } from "./add-card-dialog";
 import { EditCardDialog } from "./edit-card-dialog";
 import { DeleteCardDialog } from "./delete-card-dialog";
 import { EditDeckDialog } from "./edit-deck-dialog";
+import { DeleteAllCardsDialog } from "./delete-all-cards-dialog";
 import { StudyLink } from "./study-link";
 import { GenerateCardsButton } from "./generate-cards-button";
 
@@ -23,6 +25,7 @@ interface DeckPageProps {
 }
 
 const CARDS_PER_DECK_LIMIT = 15;
+const AI_GENERATION_LIMIT = 20;
 
 export default async function DeckPage({ params }: DeckPageProps) {
   const { userId, has } = await auth();
@@ -39,6 +42,7 @@ export default async function DeckPage({ params }: DeckPageProps) {
 
   const isFreePlan = !has({ feature: "unlimited_decks" });
   const isAtCardLimit = isFreePlan && cards.length >= CARDS_PER_DECK_LIMIT;
+  const isAtAiLimit = cards.length >= AI_GENERATION_LIMIT;
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-8">
@@ -61,8 +65,13 @@ export default async function DeckPage({ params }: DeckPageProps) {
             <GenerateCardsButton
               deckId={id}
               hasDescription={!!deck.description}
+              cardCount={cards.length}
+              aiGenerationLimit={AI_GENERATION_LIMIT}
             />
             <EditDeckDialog deck={deck} />
+            {cards.length > 0 && (
+              <DeleteAllCardsDialog deckId={id} cardCount={cards.length} />
+            )}
             {cards.length > 0 ? (
               <StudyLink deckId={id} />
             ) : (
@@ -127,13 +136,39 @@ export default async function DeckPage({ params }: DeckPageProps) {
                   <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
                     Front
                   </p>
-                  <p className="text-foreground font-medium">{card.front}</p>
+                  {card.front && (
+                    <p className="text-foreground font-medium">{card.front}</p>
+                  )}
+                  {card.frontImageUrl && (
+                    <div className="mt-1 rounded-md overflow-hidden border border-border">
+                      <Image
+                        src={card.frontImageUrl}
+                        alt="Front image"
+                        width={400}
+                        height={160}
+                        className="w-full object-cover max-h-28"
+                      />
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="flex-1 pb-2">
                   <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
                     Back
                   </p>
-                  <p className="text-foreground mt-1 text-sm">{card.back}</p>
+                  {card.back && (
+                    <p className="text-foreground mt-1 text-sm">{card.back}</p>
+                  )}
+                  {card.backImageUrl && (
+                    <div className="mt-2 rounded-md overflow-hidden border border-border">
+                      <Image
+                        src={card.backImageUrl}
+                        alt="Back image"
+                        width={400}
+                        height={160}
+                        className="w-full object-cover max-h-28"
+                      />
+                    </div>
+                  )}
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2 pt-2">
                   <EditCardDialog card={card} deckId={id} />

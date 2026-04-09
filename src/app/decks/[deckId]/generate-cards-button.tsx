@@ -15,11 +15,15 @@ import { generateCardsAction } from "@/actions/cards";
 interface GenerateCardsButtonProps {
   deckId: number;
   hasDescription: boolean;
+  cardCount: number;
+  aiGenerationLimit: number;
 }
 
 export function GenerateCardsButton({
   deckId,
   hasDescription,
+  cardCount,
+  aiGenerationLimit,
 }: GenerateCardsButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +66,27 @@ export function GenerateCardsButton({
         </Tooltip>
       }
     >
-      {hasDescription ? (
+      {cardCount >= aiGenerationLimit ? (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="sm"
+                aria-disabled="true"
+                onClick={(e) => e.preventDefault()}
+                className="gap-1.5 cursor-not-allowed opacity-50"
+              />
+            }
+          >
+            <Sparkles className="size-4" />
+            Generate with AI
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-64 text-center">
+            AI generation is limited to {aiGenerationLimit} cards per deck. This deck already has {cardCount} card{cardCount !== 1 ? "s" : ""}.
+          </TooltipContent>
+        </Tooltip>
+      ) : hasDescription ? (
         <div className="flex flex-col items-end gap-1">
           <Button
             variant="outline"
