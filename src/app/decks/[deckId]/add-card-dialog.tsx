@@ -121,12 +121,10 @@ export function AddCardDialog({ deckId, trigger, isAtLimit = false }: AddCardDia
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <span tabIndex={0}>
-              <Button variant="outline" size="sm" disabled>
-                + Add Card
-              </Button>
-            </span>
+          <TooltipTrigger render={<span tabIndex={0} />}>
+            <Button variant="outline" size="sm" disabled>
+              + Add Card
+            </Button>
           </TooltipTrigger>
           <TooltipContent>
             Card limit reached. Upgrade to Pro for unlimited cards.
