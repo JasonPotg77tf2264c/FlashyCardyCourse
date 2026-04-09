@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -78,18 +78,44 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a;
 }
 
+const FLIP_DURATION_MS = 560;
+
 export function FlashcardStudy({ cards, deckId, deckName }: FlashcardStudyProps) {
   const router = useRouter();
   const [deck, setDeck] = useState<CardData[]>(cards);
   const [currentIndex, setCurrentIndex] = useState(0);
+  // visibleIndex tracks which card's content is rendered — lags behind
+  // currentIndex when navigating while flipped so the new card's answer
+  // is never shown during the unflip animation.
+  const [visibleIndex, setVisibleIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
+  const pendingNavRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const total = deck.length;
-  const currentCard = deck[currentIndex];
+  const currentCard = deck[visibleIndex];
   const progressPercent = ((currentIndex + 1) / total) * 100;
+
+  function navigateTo(newIndex: number) {
+    if (pendingNavRef.current) clearTimeout(pendingNavRef.current);
+    setCurrentIndex(newIndex);
+    if (isFlipped) {
+      setIsFlipped(false);
+      pendingNavRef.current = setTimeout(() => {
+        setVisibleIndex(newIndex);
+      }, FLIP_DURATION_MS);
+    } else {
+      setVisibleIndex(newIndex);
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (pendingNavRef.current) clearTimeout(pendingNavRef.current);
+    };
+  }, []);
 
   function handleFlip() {
     setIsFlipped((prev) => !prev);
@@ -97,14 +123,12 @@ export function FlashcardStudy({ cards, deckId, deckName }: FlashcardStudyProps)
 
   function handlePrevious() {
     if (currentIndex === 0) return;
-    setCurrentIndex((i) => i - 1);
-    setIsFlipped(false);
+    navigateTo(currentIndex - 1);
   }
 
   function handleNext() {
     if (currentIndex === total - 1) return;
-    setCurrentIndex((i) => i + 1);
-    setIsFlipped(false);
+    navigateTo(currentIndex + 1);
   }
 
   useEffect(() => {
@@ -122,36 +146,38 @@ export function FlashcardStudy({ cards, deckId, deckName }: FlashcardStudyProps)
   }, [currentIndex, total]);
 
   function handleShuffle() {
+    if (pendingNavRef.current) clearTimeout(pendingNavRef.current);
     setDeck(shuffleArray(cards));
     setCurrentIndex(0);
+    setVisibleIndex(0);
     setIsFlipped(false);
   }
 
   function handleCorrect() {
-    const newCorrect = correctCount + 1;
-    setCorrectCount(newCorrect);
+    setCorrectCount((c) => c + 1);
     if (currentIndex < total - 1) {
-      setCurrentIndex((i) => i + 1);
-      setIsFlipped(false);
+      navigateTo(currentIndex + 1);
     } else {
-      setSessionComplete(true);
+      setIsFlipped(false);
+      pendingNavRef.current = setTimeout(() => setSessionComplete(true), FLIP_DURATION_MS);
     }
   }
 
   function handleIncorrect() {
-    const newIncorrect = incorrectCount + 1;
-    setIncorrectCount(newIncorrect);
+    setIncorrectCount((c) => c + 1);
     if (currentIndex < total - 1) {
-      setCurrentIndex((i) => i + 1);
-      setIsFlipped(false);
+      navigateTo(currentIndex + 1);
     } else {
-      setSessionComplete(true);
+      setIsFlipped(false);
+      pendingNavRef.current = setTimeout(() => setSessionComplete(true), FLIP_DURATION_MS);
     }
   }
 
   function handleStudyAgain() {
+    if (pendingNavRef.current) clearTimeout(pendingNavRef.current);
     setDeck(cards);
     setCurrentIndex(0);
+    setVisibleIndex(0);
     setIsFlipped(false);
     setCorrectCount(0);
     setIncorrectCount(0);
