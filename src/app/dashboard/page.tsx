@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getAccessContext } from "@/lib/access";
 import Link from "next/link";
 import {
@@ -16,6 +17,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getDecksByUserWithCardCount } from "@/db/queries/decks";
 import { AddDeckDialog } from "@/components/add-deck-dialog";
 import { DeleteDeckButton } from "@/components/delete-deck-button";
+import { ProUiThemeSelect } from "@/components/pro-ui-theme-select";
+import { ThemeModeToggle } from "@/components/theme-mode-toggle";
+import {
+  PRO_UI_THEME_COOKIE,
+  resolveProUiThemeSelection,
+} from "@/lib/pro-ui-theme";
 
 const DECK_LIMIT = 3;
 const CARDS_PER_DECK_LIMIT = 15;
@@ -23,6 +30,11 @@ const CARDS_PER_DECK_LIMIT = 15;
 export default async function DashboardPage() {
   const { userId, hasUnlimitedDecks, isPro } = await getAccessContext();
   if (!userId) redirect("/");
+
+  const cookieStore = await cookies();
+  const proUiThemeSelection = resolveProUiThemeSelection(
+    cookieStore.get(PRO_UI_THEME_COOKIE)?.value,
+  );
 
   const decks = await getDecksByUserWithCardCount(userId);
   const isFreePlan = !hasUnlimitedDecks;
@@ -34,12 +46,30 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-8">
       {/* Page header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Manage your flashcard decks</p>
         </div>
-        <AddDeckDialog isAtLimit={isAtLimit} />
+        <div className="flex flex-col items-stretch gap-3 sm:items-end">
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-muted-foreground text-sm hidden sm:inline">
+              Theme
+            </span>
+            <ThemeModeToggle />
+          </div>
+          {isPro && (
+            <Card className="border-border bg-card w-full sm:w-auto sm:min-w-[280px]">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Interface background</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <ProUiThemeSelect currentTheme={proUiThemeSelection} />
+              </CardContent>
+            </Card>
+          )}
+          <AddDeckDialog isAtLimit={isAtLimit} />
+        </div>
       </div>
 
       {/* Free plan usage banner */}

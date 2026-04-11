@@ -1,4 +1,12 @@
-import { integer, pgTable, varchar, text, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  pgTable,
+  varchar,
+  text,
+  timestamp,
+  pgEnum,
+} from 'drizzle-orm/pg-core';
 
 export const decks = pgTable('decks', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -41,6 +49,8 @@ export const cards = pgTable('cards', {
   frontImageUrl: text(),
   back: text(),
   backImageUrl: text(),
+  /** True when the card was created by AI generation (not manual add). */
+  aiGenerated: boolean().notNull().default(false),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow(),
 });

@@ -16,8 +16,16 @@ export async function createCard(
   frontImageUrl: string | null,
   back: string | null,
   backImageUrl: string | null,
+  aiGenerated = false,
 ) {
-  return db.insert(cards).values({ deckId, front, frontImageUrl, back, backImageUrl });
+  return db.insert(cards).values({
+    deckId,
+    front,
+    frontImageUrl,
+    back,
+    backImageUrl,
+    aiGenerated,
+  });
 }
 
 export async function updateCard(
@@ -51,9 +59,17 @@ export async function deleteCard(cardId: number, deckId: number) {
 export async function bulkCreateCards(
   deckId: number,
   cardList: { front: string; back: string }[],
+  aiGenerated: boolean,
 ) {
   return db.insert(cards).values(
-    cardList.map((c) => ({ deckId, front: c.front, frontImageUrl: null, back: c.back, backImageUrl: null })),
+    cardList.map((c) => ({
+      deckId,
+      front: c.front,
+      frontImageUrl: null,
+      back: c.back,
+      backImageUrl: null,
+      aiGenerated,
+    })),
   );
 }
 

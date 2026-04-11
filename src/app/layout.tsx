@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Poppins } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
+import { AppProviders } from "@/components/app-providers";
 import { HeaderUserSection } from "@/components/header-user-section";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getAccessContext } from "@/lib/access";
+import {
+  PRO_UI_THEME_COOKIE,
+  resolveProUiThemeDataAttribute,
+} from "@/lib/pro-ui-theme";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -17,18 +22,27 @@ export const metadata: Metadata = {
   description: "Flashcard app to supercharge your learning",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { isPro } = await getAccessContext();
+  const cookieStore = await cookies();
+  const proUiTheme = resolveProUiThemeDataAttribute(
+    isPro,
+    cookieStore.get(PRO_UI_THEME_COOKIE)?.value,
+  );
+
   return (
     <html
       lang="en"
-      className={`${poppins.variable} h-full antialiased dark`}
+      suppressHydrationWarning
+      className={`${poppins.variable} h-full antialiased`}
+      data-ui-theme={proUiTheme}
     >
       <body className="min-h-full flex flex-col">
-        <ClerkProvider appearance={{ baseTheme: dark }}>
+        <AppProviders>
           <TooltipProvider>
             <header className="flex items-center justify-between border-b border-border px-6 py-3">
               <span className="text-lg font-semibold tracking-tight text-foreground">
@@ -40,7 +54,7 @@ export default function RootLayout({
             </header>
             {children}
           </TooltipProvider>
-        </ClerkProvider>
+        </AppProviders>
       </body>
     </html>
   );

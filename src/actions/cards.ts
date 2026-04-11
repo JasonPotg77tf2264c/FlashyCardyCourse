@@ -9,8 +9,12 @@ import { openai } from "@ai-sdk/openai";
 import { put, del } from "@vercel/blob";
 import { getDeckById } from "@/db/queries/decks";
 import { createCard, updateCard, deleteCard, getCardById, getCardsByDeck, bulkCreateCards, deleteAllCards } from "@/db/queries/cards";
-
-const CARDS_PER_DECK_LIMIT = 15;
+import {
+  AI_GENERATION_CAP_PER_DECK,
+  CARDS_PER_DECK_LIMIT_FREE,
+  CARDS_PER_DECK_LIMIT_PRO,
+  getCardsPerDeckLimit,
+} from "@/lib/deck-limits";
 
 const createCardSchema = z
   .object({
@@ -60,6 +64,12 @@ const deleteCardSchema = z.object({
 
 const generateCardsSchema = z.object({
   deckId: z.number().int().positive(),
+  count: z
+    .number()
+    .int()
+    .min(5)
+    .max(75)
+    .refine((n) => n % 5 === 0, "Count must be a multiple of 5"),
 });
 
 type CreateCardInput = {
@@ -133,13 +143,14 @@ export async function createCardAction(data: CreateCardInput) {
   const deck = await getDeckById(deckId, userId);
   if (!deck) throw new Error("Deck not found");
 
-  if (!hasUnlimitedDecks) {
-    const existingCards = await getCardsByDeck(deckId);
-    if (existingCards.length >= CARDS_PER_DECK_LIMIT) {
-      throw new Error(
-        `Free plan limit: ${CARDS_PER_DECK_LIMIT} cards per deck. Upgrade to Pro for unlimited cards.`,
-      );
-    }
+  const existingCards = await getCardsByDeck(deckId);
+  const deckCardLimit = getCardsPerDeckLimit(hasUnlimitedDecks);
+  if (existingCards.length >= deckCardLimit) {
+    throw new Error(
+      hasUnlimitedDecks
+        ? `Pro plan limit: ${CARDS_PER_DECK_LIMIT_PRO} cards per deck. Delete cards to add more.`
+        : `Free plan limit: ${CARDS_PER_DECK_LIMIT_FREE} cards per deck. Upgrade to Pro for up to ${CARDS_PER_DECK_LIMIT_PRO} cards per deck.`,
+    );
   }
 
   await createCard(
@@ -262,7 +273,7 @@ export async function deleteAllCardsAction(data: DeleteAllCardsInput) {
 }
 
 export async function generateCardsAction(data: GenerateCardsInput) {
-  const { userId, hasAI } = await getAccessContext();
+  const { userId, hasAI, hasUnlimitedDecks } = await getAccessContext();
   if (!userId) throw new Error("Unauthorized");
 
   if (!hasAI) throw new Error("AI flashcard generation requires a Pro plan.");
@@ -270,10 +281,29 @@ export async function generateCardsAction(data: GenerateCardsInput) {
   const parsed = generateCardsSchema.safeParse(data);
   if (!parsed.success) throw new Error("Invalid input");
 
-  const { deckId } = parsed.data;
+  const { deckId, count } = parsed.data;
 
   const deck = await getDeckById(deckId, userId);
   if (!deck) throw new Error("Deck not found");
+
+  const existingCards = await getCardsByDeck(deckId);
+  const aiGeneratedSoFar = existingCards.filter((c) => c.aiGenerated).length;
+  const remainingAiSlots = AI_GENERATION_CAP_PER_DECK - aiGeneratedSoFar;
+  if (count > remainingAiSlots) {
+    throw new Error(
+      `This deck can receive at most ${AI_GENERATION_CAP_PER_DECK} AI-generated cards (${remainingAiSlots} slot${remainingAiSlots !== 1 ? "s" : ""} left).`,
+    );
+  }
+
+  const deckCardLimit = getCardsPerDeckLimit(hasUnlimitedDecks);
+  const remainingDeckSlots = deckCardLimit - existingCards.length;
+  if (count > remainingDeckSlots) {
+    throw new Error(
+      hasUnlimitedDecks
+        ? `Not enough room in this deck (${remainingDeckSlots} card slot${remainingDeckSlots !== 1 ? "s" : ""} left; max ${CARDS_PER_DECK_LIMIT_PRO} per deck).`
+        : `Not enough room in this deck on the Free plan (${remainingDeckSlots} card slot${remainingDeckSlots !== 1 ? "s" : ""} left).`,
+    );
+  }
 
   const topic = deck.description
     ? `${deck.name}: ${deck.description}`
@@ -313,10 +343,15 @@ Rules:
 - NEVER use bullet points or dashes in step-by-step cards
 - Use the step-by-step format ONLY when the topic genuinely requires working through a process
 - Let the deck name and description determine which format to use`,
-    prompt: `Generate 20 flashcards for the following deck: ${topic}`,
+    prompt: `Generate exactly ${count} flashcards for the following deck: ${topic}`,
   });
 
-  await bulkCreateCards(deckId, output.cards);
+  const trimmed = output.cards.slice(0, count);
+  if (trimmed.length === 0) {
+    throw new Error("The model did not return any cards. Please try again.");
+  }
+
+  await bulkCreateCards(deckId, trimmed, true);
 
   revalidatePath(`/decks/${deckId}`);
 }

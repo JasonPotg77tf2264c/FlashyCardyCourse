@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { getAccessContext } from "@/lib/access";
 import Link from "next/link";
 import Image from "next/image";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,13 +20,11 @@ import { EditDeckDialog } from "./edit-deck-dialog";
 import { DeleteAllCardsDialog } from "./delete-all-cards-dialog";
 import { StudyLink } from "./study-link";
 import { GenerateCardsButton } from "./generate-cards-button";
+import { getCardsPerDeckLimit } from "@/lib/deck-limits";
 
 interface DeckPageProps {
   params: Promise<{ deckId: string }>;
 }
-
-const CARDS_PER_DECK_LIMIT = 15;
-const AI_GENERATION_LIMIT = 20;
 
 export default async function DeckPage({ params }: DeckPageProps) {
   const { userId, hasUnlimitedDecks, hasAI } = await getAccessContext();
@@ -40,15 +39,16 @@ export default async function DeckPage({ params }: DeckPageProps) {
 
   const cards = await getCardsByDeck(id);
 
+  const aiGeneratedCount = cards.filter((c) => c.aiGenerated).length;
   const isFreePlan = !hasUnlimitedDecks;
-  const isAtCardLimit = isFreePlan && cards.length >= CARDS_PER_DECK_LIMIT;
-  const isAtAiLimit = cards.length >= AI_GENERATION_LIMIT;
+  const deckCardLimit = getCardsPerDeckLimit(hasUnlimitedDecks);
+  const isAtCardLimit = cards.length >= deckCardLimit;
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-8">
       {/* Deck section */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex flex-col gap-1">
             <Link
               href="/dashboard"
@@ -61,38 +61,40 @@ export default async function DeckPage({ params }: DeckPageProps) {
               <p className="text-muted-foreground mt-1">{deck.description}</p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-3 lg:items-end">
             <GenerateCardsButton
               deckId={id}
               hasDescription={!!deck.description}
-              cardCount={cards.length}
-              aiGenerationLimit={AI_GENERATION_LIMIT}
+              totalCardCount={cards.length}
+              aiGeneratedCount={aiGeneratedCount}
               hasAI={hasAI}
+              hasUnlimitedDecks={hasUnlimitedDecks}
             />
-            <EditDeckDialog deck={deck} />
-            {cards.length > 0 && (
-              <DeleteAllCardsDialog deckId={id} cardCount={cards.length} />
-            )}
-            {cards.length > 0 ? (
-              <StudyLink deckId={id} />
-            ) : (
-              <Button disabled>Study</Button>
-            )}
+            <div className="flex flex-wrap gap-2">
+              <EditDeckDialog deck={deck} />
+              {cards.length > 0 && (
+                <DeleteAllCardsDialog deckId={id} cardCount={cards.length} />
+              )}
+              {cards.length > 0 ? (
+                <StudyLink deckId={id} />
+              ) : (
+                <Button disabled>Study</Button>
+              )}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary">
-            {cards.length} card{cards.length !== 1 ? "s" : ""}
-          </Badge>
-          {isFreePlan && (
-            <Badge
-              variant={isAtCardLimit ? "destructive" : "outline"}
-              className="text-xs"
-            >
-              {cards.length} / {CARDS_PER_DECK_LIMIT} cards (Free plan)
-            </Badge>
-          )}
-          <span className="text-muted-foreground text-xs">
+        <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          <span className="text-foreground font-medium tabular-nums">
+            {cards.length} / {deckCardLimit} cards
+            <span className="text-muted-foreground font-normal">
+              {" "}
+              ({isFreePlan ? "Free plan" : "Pro plan"})
+            </span>
+          </span>
+          <span aria-hidden className="select-none">
+            ·
+          </span>
+          <span>
             Last updated{" "}
             {deck.updatedAt.toLocaleDateString("en-US", {
               year: "numeric",
@@ -102,12 +104,21 @@ export default async function DeckPage({ params }: DeckPageProps) {
           </span>
         </div>
         {isAtCardLimit && (
-          <p className="text-xs text-destructive">
-            Card limit reached for this deck.{" "}
-            <Link href="/pricing" className="underline underline-offset-3">
-              Upgrade to Pro
-            </Link>{" "}
-            for unlimited cards.
+          <p className="text-destructive text-xs">
+            {isFreePlan ? (
+              <>
+                Card limit reached for this deck ({deckCardLimit} max on Free).{" "}
+                <Link href="/pricing" className="underline underline-offset-3">
+                  Upgrade to Pro
+                </Link>{" "}
+                for up to {getCardsPerDeckLimit(true)} cards per deck.
+              </>
+            ) : (
+              <>
+                Card limit reached for this deck ({deckCardLimit} max on Pro). Delete cards to add
+                more.
+              </>
+            )}
           </p>
         )}
       </div>
@@ -126,6 +137,7 @@ export default async function DeckPage({ params }: DeckPageProps) {
             </p>
             <AddCardDialog
               deckId={id}
+              isAtLimit={isAtCardLimit}
               trigger={<Button>Add your first card</Button>}
             />
           </div>
@@ -134,9 +146,17 @@ export default async function DeckPage({ params }: DeckPageProps) {
             {cards.map((card) => (
               <Card key={card.id} className="flex flex-col">
                 <CardHeader className="pb-2">
-                  <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                    Front
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                      Front
+                    </p>
+                    {card.aiGenerated && (
+                      <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px] font-normal">
+                        <Sparkles className="size-3 text-primary" />
+                        AI
+                      </Badge>
+                    )}
+                  </div>
                   {card.front && (
                     <p className="text-foreground font-medium">{card.front}</p>
                   )}
