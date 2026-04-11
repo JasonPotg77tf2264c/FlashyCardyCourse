@@ -115,10 +115,7 @@ export function GenerateCardsButton({
             includes an AI marker on new cards.
           </p>
           <p className="text-foreground font-medium">
-            {aiGeneratedCount} AI-generated · {manualCardCount} manual · {remainingAiSlots} AI slot
-            {remainingAiSlots !== 1 ? "s" : ""} left (cap {AI_GENERATION_CAP_PER_DECK})
-            {" "}
-            · {Math.max(0, remainingDeckSlots)} card slot
+            {aiGeneratedCount} AI-generated · {manualCardCount} manual · {Math.max(0, remainingDeckSlots)} card slot
             {Math.max(0, remainingDeckSlots) !== 1 ? "s" : ""} left in this deck (
             {deckCardLimit} max, {hasUnlimitedDecks ? "Pro" : "Free"} plan)
           </p>

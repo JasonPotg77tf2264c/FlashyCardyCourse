@@ -1,25 +1,21 @@
 import { redirect, notFound } from "next/navigation";
 import { getAccessContext } from "@/lib/access";
 import Link from "next/link";
-import Image from "next/image";
-import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getDeckById } from "@/db/queries/decks";
 import { getCardsByDeck } from "@/db/queries/cards";
 import { AddCardDialog } from "./add-card-dialog";
-import { EditCardDialog } from "./edit-card-dialog";
-import { DeleteCardDialog } from "./delete-card-dialog";
 import { EditDeckDialog } from "./edit-deck-dialog";
 import { DeleteAllCardsDialog } from "./delete-all-cards-dialog";
 import { StudyLink } from "./study-link";
 import { GenerateCardsButton } from "./generate-cards-button";
+import { CardGrid } from "./card-grid";
 import { getCardsPerDeckLimit } from "@/lib/deck-limits";
 
 interface DeckPageProps {
@@ -78,7 +74,18 @@ export default async function DeckPage({ params }: DeckPageProps) {
               {cards.length > 0 ? (
                 <StudyLink deckId={id} />
               ) : (
-                <Button disabled>Study</Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <span>
+                        <Button disabled>🧠 Brain Challenge</Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Lets go! and test my memory bank</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>
@@ -142,62 +149,7 @@ export default async function DeckPage({ params }: DeckPageProps) {
             />
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {cards.map((card) => (
-              <Card key={card.id} className="flex flex-col">
-                <CardHeader className="pb-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                      Front
-                    </p>
-                    {card.aiGenerated && (
-                      <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px] font-normal">
-                        <Sparkles className="size-3 text-primary" />
-                        AI
-                      </Badge>
-                    )}
-                  </div>
-                  {card.front && (
-                    <p className="text-foreground font-medium">{card.front}</p>
-                  )}
-                  {card.frontImageUrl && (
-                    <div className="mt-1 rounded-md overflow-hidden border border-border">
-                      <Image
-                        src={card.frontImageUrl}
-                        alt="Front image"
-                        width={400}
-                        height={160}
-                        className="w-full object-cover max-h-28"
-                      />
-                    </div>
-                  )}
-                </CardHeader>
-                <CardContent className="flex-1 pb-2">
-                  <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                    Back
-                  </p>
-                  {card.back && (
-                    <p className="text-foreground mt-1 text-sm">{card.back}</p>
-                  )}
-                  {card.backImageUrl && (
-                    <div className="mt-2 rounded-md overflow-hidden border border-border">
-                      <Image
-                        src={card.backImageUrl}
-                        alt="Back image"
-                        width={400}
-                        height={160}
-                        className="w-full object-cover max-h-28"
-                      />
-                    </div>
-                  )}
-                </CardContent>
-                <CardFooter className="flex justify-end gap-2 pt-2">
-                  <EditCardDialog card={card} deckId={id} />
-                  <DeleteCardDialog cardId={card.id} deckId={id} />
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          <CardGrid cards={cards} deckId={id} />
         )}
       </div>
     </div>

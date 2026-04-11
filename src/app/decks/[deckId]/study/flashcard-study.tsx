@@ -368,6 +368,10 @@ export function FlashcardStudy({ cards, deckId, deckName }: FlashcardStudyProps)
 
       {/* Correct / Incorrect buttons — visible only on back side */}
       {isFlipped && (
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-sm text-muted-foreground italic text-center max-w-sm">
+            🤝 Be honest with yourself — your growth depends on it. Did you really get it right?
+          </p>
         <div className="flex items-center gap-4">
           <Button
             size="lg"
@@ -386,6 +390,7 @@ export function FlashcardStudy({ cards, deckId, deckName }: FlashcardStudyProps)
             <XCircle className="h-5 w-5" />
             Incorrect
           </Button>
+        </div>
         </div>
       )}
 
