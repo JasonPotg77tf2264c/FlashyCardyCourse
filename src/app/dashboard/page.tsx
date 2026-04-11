@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { getAccessContext } from "@/lib/access";
 import Link from "next/link";
 import {
   Card,
@@ -21,13 +21,10 @@ const DECK_LIMIT = 3;
 const CARDS_PER_DECK_LIMIT = 15;
 
 export default async function DashboardPage() {
-  const { userId, has } = await auth();
+  const { userId, hasUnlimitedDecks, isPro } = await getAccessContext();
   if (!userId) redirect("/");
 
   const decks = await getDecksByUserWithCardCount(userId);
-
-  const hasUnlimitedDecks = has({ feature: "unlimited_decks" });
-  const isPro = has({ plan: "pro" });
   const isFreePlan = !hasUnlimitedDecks;
   const isAtLimit = isFreePlan && decks.length >= DECK_LIMIT;
   const deckUsagePercent = isFreePlan

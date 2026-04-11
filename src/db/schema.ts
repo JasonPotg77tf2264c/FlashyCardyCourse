@@ -1,4 +1,4 @@
-import { integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core';
+import { integer, pgTable, varchar, text, timestamp, pgEnum } from 'drizzle-orm/pg-core';
 
 export const decks = pgTable('decks', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -7,6 +7,29 @@ export const decks = pgTable('decks', {
   description: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow(),
+});
+
+export const adminPrivilegeActionEnum = pgEnum('admin_privilege_action', ['granted', 'revoked']);
+
+export const adminPrivilegeLogs = pgTable('admin_privilege_logs', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  targetUserId: varchar({ length: 255 }).notNull(),
+  targetUserName: varchar({ length: 255 }).notNull(),
+  grantedByUserId: varchar({ length: 255 }).notNull(),
+  grantedByName: varchar({ length: 255 }).notNull(),
+  action: adminPrivilegeActionEnum().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+});
+
+export const deactivated = pgTable('deactivated', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar({ length: 255 }).notNull().unique(),
+  userName: varchar({ length: 255 }).notNull(),
+  email: varchar({ length: 255 }),
+  deactivatedByUserId: varchar({ length: 255 }).notNull(),
+  deactivatedByName: varchar({ length: 255 }).notNull(),
+  reason: text(),
+  deactivatedAt: timestamp().notNull().defaultNow(),
 });
 
 export const cards = pgTable('cards', {

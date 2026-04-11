@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { getAccessContext } from "@/lib/access";
 import { z } from "zod";
 import { generateText, Output } from "ai";
 import { openai } from "@ai-sdk/openai";
@@ -118,7 +119,7 @@ export async function uploadCardImageAction(
 }
 
 export async function createCardAction(data: CreateCardInput) {
-  const { userId, has } = await auth();
+  const { userId, hasUnlimitedDecks } = await getAccessContext();
   if (!userId) throw new Error("Unauthorized");
 
   const parsed = createCardSchema.safeParse(data);
@@ -132,7 +133,6 @@ export async function createCardAction(data: CreateCardInput) {
   const deck = await getDeckById(deckId, userId);
   if (!deck) throw new Error("Deck not found");
 
-  const hasUnlimitedDecks = has({ feature: "unlimited_decks" });
   if (!hasUnlimitedDecks) {
     const existingCards = await getCardsByDeck(deckId);
     if (existingCards.length >= CARDS_PER_DECK_LIMIT) {
@@ -262,11 +262,10 @@ export async function deleteAllCardsAction(data: DeleteAllCardsInput) {
 }
 
 export async function generateCardsAction(data: GenerateCardsInput) {
-  const { userId, has } = await auth();
+  const { userId, hasAI } = await getAccessContext();
   if (!userId) throw new Error("Unauthorized");
 
-  const canUseAI = has({ feature: "ai_flashcard_generation" });
-  if (!canUseAI) throw new Error("AI flashcard generation requires a Pro plan.");
+  if (!hasAI) throw new Error("AI flashcard generation requires a Pro plan.");
 
   const parsed = generateCardsSchema.safeParse(data);
   if (!parsed.success) throw new Error("Invalid input");

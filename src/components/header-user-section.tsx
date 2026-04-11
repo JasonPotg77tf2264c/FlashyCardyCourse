@@ -10,7 +10,11 @@ export function HeaderUserSection() {
   const { userId, has } = useAuth();
   const { user } = useUser();
 
-  const isPro = has?.({ plan: "pro" }) ?? false;
+  const isPaidPro = has?.({ plan: "pro" }) ?? false;
+  const adminGranted =
+    (user?.publicMetadata as { adminGranted?: boolean } | undefined)
+      ?.adminGranted === true;
+  const isPro = isPaidPro || adminGranted;
   const isAdmin =
     (user?.publicMetadata as { role?: string } | undefined)?.role === "admin";
 

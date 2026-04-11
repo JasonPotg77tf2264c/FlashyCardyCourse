@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Show } from "@clerk/nextjs";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +16,7 @@ interface GenerateCardsButtonProps {
   hasDescription: boolean;
   cardCount: number;
   aiGenerationLimit: number;
+  hasAI: boolean;
 }
 
 export function GenerateCardsButton({
@@ -24,6 +24,7 @@ export function GenerateCardsButton({
   hasDescription,
   cardCount,
   aiGenerationLimit,
+  hasAI,
 }: GenerateCardsButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -42,30 +43,31 @@ export function GenerateCardsButton({
     });
   }
 
+  if (!hasAI) {
+    return (
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/pricing")}
+              className="gap-1.5"
+            />
+          }
+        >
+          <Sparkles className="size-4" />
+          Generate with AI
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-56 text-center">
+          AI card generation is a Pro feature. Click to upgrade your plan.
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
   return (
-    <Show
-      when={{ feature: "ai_flashcard_generation" }}
-      fallback={
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/pricing")}
-                className="gap-1.5"
-              />
-            }
-          >
-            <Sparkles className="size-4" />
-            Generate with AI
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-56 text-center">
-            AI card generation is a Pro feature. Click to upgrade your plan.
-          </TooltipContent>
-        </Tooltip>
-      }
-    >
+    <>
       {cardCount >= aiGenerationLimit ? (
         <Tooltip>
           <TooltipTrigger
@@ -123,6 +125,6 @@ export function GenerateCardsButton({
           </TooltipContent>
         </Tooltip>
       )}
-    </Show>
+    </>
   );
 }

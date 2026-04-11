@@ -1,9 +1,10 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createDeck, updateDeck, deleteDeck, getDecksByUser } from "@/db/queries/decks";
+import { getAccessContext } from "@/lib/access";
+
 
 const createDeckSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -13,13 +14,12 @@ const createDeckSchema = z.object({
 type CreateDeckInput = z.infer<typeof createDeckSchema>;
 
 export async function createDeckAction(data: CreateDeckInput) {
-  const { userId, has } = await auth();
+  const { userId, hasUnlimitedDecks } = await getAccessContext();
   if (!userId) throw new Error("Unauthorized");
 
   const parsed = createDeckSchema.safeParse(data);
   if (!parsed.success) throw new Error("Invalid input");
 
-  const hasUnlimitedDecks = has({ feature: "unlimited_decks" });
   if (!hasUnlimitedDecks) {
     const existingDecks = await getDecksByUser(userId);
     if (existingDecks.length >= 3) {
@@ -41,7 +41,7 @@ const updateDeckSchema = z.object({
 type UpdateDeckInput = z.infer<typeof updateDeckSchema>;
 
 export async function updateDeckAction(data: UpdateDeckInput) {
-  const { userId } = await auth();
+  const { userId } = await getAccessContext();
   if (!userId) throw new Error("Unauthorized");
 
   const parsed = updateDeckSchema.safeParse(data);
@@ -65,7 +65,7 @@ const deleteDeckSchema = z.object({
 type DeleteDeckInput = z.infer<typeof deleteDeckSchema>;
 
 export async function deleteDeckAction(data: DeleteDeckInput) {
-  const { userId } = await auth();
+  const { userId } = await getAccessContext();
   if (!userId) throw new Error("Unauthorized");
 
   const parsed = deleteDeckSchema.safeParse(data);

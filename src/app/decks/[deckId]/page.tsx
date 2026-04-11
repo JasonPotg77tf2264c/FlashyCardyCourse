@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
+import { getAccessContext } from "@/lib/access";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ const CARDS_PER_DECK_LIMIT = 15;
 const AI_GENERATION_LIMIT = 20;
 
 export default async function DeckPage({ params }: DeckPageProps) {
-  const { userId, has } = await auth();
+  const { userId, hasUnlimitedDecks, hasAI } = await getAccessContext();
   if (!userId) redirect("/");
 
   const { deckId } = await params;
@@ -40,7 +40,7 @@ export default async function DeckPage({ params }: DeckPageProps) {
 
   const cards = await getCardsByDeck(id);
 
-  const isFreePlan = !has({ feature: "unlimited_decks" });
+  const isFreePlan = !hasUnlimitedDecks;
   const isAtCardLimit = isFreePlan && cards.length >= CARDS_PER_DECK_LIMIT;
   const isAtAiLimit = cards.length >= AI_GENERATION_LIMIT;
 
@@ -67,6 +67,7 @@ export default async function DeckPage({ params }: DeckPageProps) {
               hasDescription={!!deck.description}
               cardCount={cards.length}
               aiGenerationLimit={AI_GENERATION_LIMIT}
+              hasAI={hasAI}
             />
             <EditDeckDialog deck={deck} />
             {cards.length > 0 && (
