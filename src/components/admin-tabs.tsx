@@ -315,6 +315,8 @@ export function AdminTabs({ currentUserId, users, logs }: AdminTabsProps) {
                         <div className="flex items-center gap-1.5">
                           <GrantAccessButton
                             targetUserId={user.id}
+                            targetUserName={user.fullName}
+                            targetUserEmail={user.email}
                             adminGranted={user.adminGranted}
                             isPaidPro={user.isPaidPro || user.isAdmin}
                             isSelf={user.id === currentUserId}
@@ -322,6 +324,7 @@ export function AdminTabs({ currentUserId, users, logs }: AdminTabsProps) {
                           <BanUserButton
                             targetUserId={user.id}
                             targetUserName={user.fullName}
+                            targetUserEmail={user.email}
                             isBanned={user.isBanned}
                             isSelf={user.id === currentUserId}
                             isAdmin={user.isAdmin}
@@ -399,6 +402,7 @@ export function AdminTabs({ currentUserId, users, logs }: AdminTabsProps) {
                       <ToggleAdminRoleButton
                         targetUserId={user.id}
                         targetUserName={user.fullName}
+                        targetUserEmail={user.email}
                         isAdmin={user.isAdmin}
                         isSelf={user.id === currentUserId}
                       />

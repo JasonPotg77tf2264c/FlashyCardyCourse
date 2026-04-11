@@ -11,7 +11,7 @@ import {
 import { buttonVariants } from "@/components/ui/button-variants";
 import { getAdminOverviewStats, getDeckStatsByUser, getAdminPrivilegeLogs } from "@/db/queries/admin";
 import { AdminTabs, type SerializedUser, type SerializedLog } from "@/components/admin-tabs";
-import { Users, LayoutDashboard, CreditCard, Layers, ArrowLeft } from "lucide-react";
+import { Users, CreditCard, Layers, ArrowLeft, BadgeCheck, ShieldCheck } from "lucide-react";
 
 const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,
@@ -63,21 +63,27 @@ export default async function AdminPage() {
 
   const statsByUserId = new Map(deckStatsByUser.map((s) => [s.userId, s]));
 
-  // Count users with Pro access — paid subscription, admin grant, or admin role.
-  const proUserCount = clerkUsers.filter((u) => {
+  // Break down Pro access into three distinct categories.
+  let paidSubscriberCount = 0;
+  let adminApprovedCount = 0;
+  let adminRoleProCount = 0;
+
+  for (const u of clerkUsers) {
     const meta = u.publicMetadata as {
       role?: string;
       plan?: string;
       stripe_subscription_status?: string;
       adminGranted?: boolean;
     };
-    return (
-      meta?.role === "admin" ||
-      meta?.plan === "pro" ||
-      meta?.stripe_subscription_status === "active" ||
-      meta?.adminGranted === true
-    );
-  }).length;
+    const isPaidPro =
+      meta?.plan === "pro" || meta?.stripe_subscription_status === "active";
+    const isAdminGranted = meta?.adminGranted === true;
+    const isAdminRole = meta?.role === "admin";
+
+    if (isPaidPro) paidSubscriberCount++;
+    else if (isAdminGranted) adminApprovedCount++;
+    else if (isAdminRole) adminRoleProCount++;
+  }
 
   const statsCards = [
     {
@@ -85,24 +91,35 @@ export default async function AdminPage() {
       value: totalCount,
       icon: Users,
       description: "Registered accounts",
+      accent: "",
     },
     {
       label: "Total Decks",
       value: dbStats.totalDecks,
       icon: Layers,
       description: "Across all users",
+      accent: "",
     },
     {
       label: "Total Cards",
       value: dbStats.totalCards,
       icon: CreditCard,
       description: "Flashcards created",
+      accent: "",
     },
     {
-      label: "Pro Users",
-      value: proUserCount,
-      icon: LayoutDashboard,
-      description: "Active subscriptions",
+      label: "Paid Subscribers",
+      value: paidSubscriberCount,
+      icon: BadgeCheck,
+      description: "Active paying customers",
+      accent: "text-green-500",
+    },
+    {
+      label: "Admin-Approved Pro",
+      value: adminApprovedCount + adminRoleProCount,
+      icon: ShieldCheck,
+      description: "Pro access granted by admin",
+      accent: "text-blue-500",
     },
   ];
 
@@ -187,17 +204,19 @@ export default async function AdminPage() {
       </div>
 
       {/* Overview stat cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statsCards.map(({ label, value, icon: Icon, description }) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {statsCards.map(({ label, value, icon: Icon, description, accent }) => (
           <Card key={label}>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-muted-foreground leading-tight">
                 {label}
               </CardTitle>
-              <Icon className="h-4 w-4 text-muted-foreground" />
+              <Icon className={`h-4 w-4 shrink-0 ${accent || "text-muted-foreground"}`} />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{value.toLocaleString()}</p>
+              <p className={`text-3xl font-bold ${accent}`}>
+                {value.toLocaleString()}
+              </p>
               <p className="text-xs text-muted-foreground mt-1">{description}</p>
             </CardContent>
           </Card>

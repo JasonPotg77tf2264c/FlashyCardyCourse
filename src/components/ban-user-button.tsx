@@ -13,11 +13,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toggleUserBanAction } from "@/actions/admin";
+import { AdminUserIdentityBlock } from "@/components/admin-user-identity-block";
 import { Ban, ShieldCheck } from "lucide-react";
 
 interface BanUserButtonProps {
   targetUserId: string;
   targetUserName: string;
+  targetUserEmail: string | null;
   isBanned: boolean;
   isSelf: boolean;
   isAdmin: boolean;
@@ -26,6 +28,7 @@ interface BanUserButtonProps {
 export function BanUserButton({
   targetUserId,
   targetUserName,
+  targetUserEmail,
   isBanned,
   isSelf,
   isAdmin,
@@ -65,25 +68,33 @@ export function BanUserButton({
       </Button>
 
       <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-md">
           {isBanned ? (
             <AlertDialogHeader>
-              <AlertDialogTitle>Unban {targetUserName}?</AlertDialogTitle>
+              <AlertDialogTitle>Unban user?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will restore full access to the application for{" "}
-                <strong>{targetUserName}</strong>. They will be able to sign in
-                again immediately.
+                This will restore full access to the application. They will be
+                able to sign in again immediately.
               </AlertDialogDescription>
+              <AdminUserIdentityBlock
+                name={targetUserName}
+                email={targetUserEmail}
+                userId={targetUserId}
+              />
             </AlertDialogHeader>
           ) : (
             <AlertDialogHeader>
-              <AlertDialogTitle>Ban {targetUserName}?</AlertDialogTitle>
+              <AlertDialogTitle>Ban user?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will immediately revoke all active sessions for{" "}
-                <strong>{targetUserName}</strong> and prevent them from signing
-                in. Their account and data are preserved — this action can be
-                undone by clicking Unban.
+                This will immediately revoke all active sessions and prevent
+                them from signing in. Their account and data are preserved —
+                this action can be undone by clicking Unban.
               </AlertDialogDescription>
+              <AdminUserIdentityBlock
+                name={targetUserName}
+                email={targetUserEmail}
+                userId={targetUserId}
+              />
             </AlertDialogHeader>
           )}
           <AlertDialogFooter>
